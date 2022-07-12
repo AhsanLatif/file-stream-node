@@ -11,8 +11,9 @@ const stream = require('stream');
 const readStream = fs.createReadStream(inputFilePath);  
 const writeStream = fs.createWriteStream(outputFilePath);
 
-var xtream = new stream.Transform( { objectMode: true } );
-
+var xtream = new stream.Transform( );
+writeStream.write('[');
+var chunkNo = 0;
 xtream._transform = function(chunk, encoding, done) {
 	var strData = chunk.toString();
 
@@ -37,12 +38,19 @@ xtream._transform = function(chunk, encoding, done) {
                 "err": transactionDetail['details']
             }
             let sentence = JSON.stringify(log);
-            jsonError = jsonError + sentence;
+            if(jsonError == '')
+                if(chunkNo == 0)
+                    jsonError = sentence;
+                else    
+                    jsonError = ',' + sentence;
+            else
+                jsonError = jsonError + ',' + sentence;
         }
     });
-   
+    if (jsonError != '')
+        chunkNo++;
 	this.push(jsonError);
-
+    
 	done();
 };
 
@@ -52,8 +60,10 @@ xtream._flush = function(done) {
 	};
 
 	this._invalidLine = null;
+    this.push(']')
 	done();
 };
 
 readStream.pipe(xtream).pipe(writeStream).on('finish', () => {
+
         });
